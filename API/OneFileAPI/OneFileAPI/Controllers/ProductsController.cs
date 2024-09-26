@@ -101,7 +101,7 @@ namespace OneFileAPI.Controllers
             {
                 return NotFound();
             }
-            var product = await _context.Products.FindAsync(id);
+            var product = _context.Products.FromSqlInterpolated($"SP_SELECT_PRODUCT_BYID {id}").AsEnumerable().FirstOrDefault();;
             if (product == null)
             {
                 return NotFound();

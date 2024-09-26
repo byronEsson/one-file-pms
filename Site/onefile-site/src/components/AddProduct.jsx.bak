@@ -1,0 +1,133 @@
+import { useEffect, useState } from "react";
+import { redirect, useNavigate } from "react-router-dom";
+import { postProduct } from "../api";
+
+const AddProduct = () => {
+  const [form, setForm] = useState({});
+  const [isInvalid, setIsInvalid] = useState(true);
+  const [isPosting, setIsPosting] = useState(false);
+
+  useEffect(() => {}, [isInvalid]);
+
+  const handleChange = (event) => {
+    setIsInvalid(false);
+    document.getElementById("error-message").innerText = "";
+
+    if (event.target.classList.contains("invalid"))
+      event.target.classList.remove("invalid");
+    event.target.previousElementSibling.innerText = "";
+    setForm((currentForm) => {
+      return { ...currentForm, [event.target.id]: event.target.value };
+    });
+  };
+  const handleBlur = ({ target }) => {
+    checkForError(target);
+  };
+  const checkForError = (element) => {
+    const { value, id } = element;
+    const field = document.getElementById(`${id}`);
+    if (value === undefined || value === "") {
+      field.classList.add("invalid");
+      field.placeholder = "Required";
+      setIsInvalid(() => {
+        return true;
+      });
+    }
+    if (value.length >= 100) {
+      field.classList.add("invalid");
+      field.previousElementSibling.innerText =
+        "Must be less than 100 characters";
+      setIsInvalid(true);
+    }
+    if (!(id === "quantity" || id === "price")) return;
+
+    if (isNaN(value)) {
+      field.classList.add("invalid");
+      field.value = "";
+      field.placeholder = "Must be a number";
+      setIsInvalid(true);
+    }
+    if (value < 0) {
+      field.classList.add("invalid");
+      field.value = "";
+      field.placeholder = "Must be positive";
+      setIsInvalid(true);
+    }
+  };
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const fields = Array.from(document.getElementsByClassName("form-input"));
+    const errorMessage = document.getElementById("error-message");
+
+    fields.forEach((field) => {
+      checkForError(field);
+    });
+    console.log(isInvalid);
+    if (isInvalid) {
+      errorMessage.innerText = "Please correct errors";
+      return;
+    }
+    setIsPosting(true);
+    console.log({ ...form });
+    postProduct({ ...form })
+      .then(() => {
+        redirect(`/products`);
+      })
+      .catch((err) => {
+        if (err.status === 400) {
+          errorMessage.innerText = "Please complete all fields";
+        } else {
+          errorMessage.innerText = "Something went wrong, please try again";
+        }
+      });
+  };
+  return (
+    <main>
+      <h3>Add a Product</h3>
+      <form onSubmit={handleSubmit}>
+        <label className="label" htmlFor="productName">
+          Product name:
+        </label>
+        <span className="err"></span>
+        <input
+          type="text"
+          className="form-input"
+          placeholder="Product name"
+          id="productName"
+          onChange={handleChange}
+          onBlur={handleBlur}
+        ></input>
+
+        <label className="label" htmlFor="price">
+          Price (£):
+        </label>
+        <span className="err"></span>
+        <input
+          type="text"
+          className="form-input"
+          placeholder="£0.00"
+          id="price"
+          min={0}
+          onChange={handleChange}
+          onBlur={handleBlur}
+        ></input>
+        <label className="label" htmlFor="quantity">
+          Quantity:
+        </label>
+        <span className="err"></span>
+        <input
+          type="text"
+          className="form-input"
+          placeholder="0"
+          id="quantity"
+          min={0}
+          onChange={handleChange}
+          onBlur={handleBlur}
+        ></input>
+        <button type="submit">Submit</button>
+        <span id="error-message"></span>
+      </form>
+    </main>
+  );
+};
+export default AddProduct;
